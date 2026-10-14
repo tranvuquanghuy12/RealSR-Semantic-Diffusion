@@ -1,0 +1,56 @@
+#### general settings
+name: LatentDiffusion_RealSR
+use_tb_logger: true
+model: latent_diffusion
+distortion: sr
+scale: 4
+gpu_ids: [0]
+
+#### datasets
+datasets:
+  train:
+    name: train
+    mode: LQGT
+    aug: noise
+    noise_data: ../datasets/DF2K/Corrupted_noise/
+    dataroot_GT: ../datasets/DF2K/generated/tdsr/HR
+    dataroot_LQ: ../datasets/DF2K/generated/tdsr/LR
+    use_shuffle: true
+    n_workers: 4
+    batch_size: 4
+    GT_size: 128
+    use_flip: true
+    use_rot: true
+    color: RGB
+
+#### network structures
+network_G:
+  which_model_G: latent_diffusion
+  in_nc: 3
+  out_nc: 3
+
+#### path
+path:
+  strict_load: false
+  resume_state: /home/ptitdemo/TVQH_TLU/Real-SR-master/Real-SR-master/codes/wandb/offline-run-20260820_071852-91pxuiq9/local_files/training_state/25000.state
+
+#### training settings: learning rate scheme, loss
+train:
+  lr_G: !!float 1e-4
+  weight_decay_G: 0
+  beta1_G: 0.9
+  beta2_G: 0.999
+  lr_scheme: MultiStepLR
+
+  niter: 60001
+  warmup_iter: -1  # no warm up
+  lr_steps: [10000, 20000, 40000]
+  lr_gamma: 0.5
+
+  manual_seed: 10
+  val_freq: !!float 5e3
+
+#### logger
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 2.5e3

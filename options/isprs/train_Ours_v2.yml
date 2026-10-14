@@ -1,0 +1,80 @@
+name: Ours_LDM_v2_ISPRS
+use_tb_logger: true
+model: ldm_v2
+distortion: sr
+scale: 4
+gpu_ids: [0]
+use_semantic_guidance: true
+use_multitask: true
+num_classes: 7
+freq_loss_weight: 0.1          # FFT Loss weight
+dino_model: dinov2_vits14      # DINOv2 backbone
+
+datasets:
+  train:
+    name: ISPRS_train
+    mode: SSSR
+    aug: noise
+    use_shuffle: true
+    n_workers: 4
+    SR:
+      batch_size: 4
+      supres_lst: ../datasets/kaggle_isprs/train_SR.lst
+      degrade: [Bicubic]
+      noise_data: Oracle
+    SS:
+      batch_size: 4
+      semseg_lst: ../datasets/kaggle_isprs/train_SS.lst
+    GT_size: 128
+    use_flip: true
+    use_rot: true
+    color: RGB
+    phase: train
+    scale: 4
+    data_type: img
+  val:
+    name: ISPRS_val
+    mode: SSSR
+    SR:
+      supres_lst: ../datasets/kaggle_isprs/val_SR.lst
+    SS:
+      semseg_lst: ../datasets/kaggle_isprs/val_SS.lst
+    use_shuffle: false
+    n_workers: 4
+    batch_size: 4
+    GT_size: 128
+    use_flip: false
+    use_rot: false
+    color: RGB
+    phase: val
+    scale: 4
+    data_type: img
+
+network_G:
+  which_model_G: latent_diffusion
+  in_nc: 3
+  out_nc: 3
+  scale: 4
+
+path:
+  strict_load: false
+  resume_state: /home/ptitdemo/TVQH_TLU/Real-SR-master/Real-SR-master/codes/wandb/offline-run-20260823_150510-u8t5qeao/local_files/training_state/latest.state
+  pretrain_model_G: /home/ptitdemo/TVQH_TLU/Real-SR-master/Real-SR-master/codes/wandb/offline-run-20260823_150510-u8t5qeao/local_files/models/latest_UNet.pth
+
+# 2000 samples / batch 4 = 500 iter/epoch → 200 epoch = 100000 iter
+train:
+  lr_G: !!float 1e-4
+  weight_decay_G: 0.01       # AdamW cần weight_decay > 0
+  beta1_G: 0.9
+  beta2_G: 0.999
+  lr_scheme: MultiStepLR
+  niter: 100000
+  warmup_iter: -1
+  lr_steps: [40000, 80000]
+  lr_gamma: 0.5
+  manual_seed: 42
+  val_freq: 5000
+
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 2500

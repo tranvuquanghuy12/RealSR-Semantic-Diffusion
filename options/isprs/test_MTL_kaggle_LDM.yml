@@ -1,0 +1,27 @@
+name: ISPRS_LDM_Test
+suffix: ~
+model: latent_diffusion
+distortion: sr
+scale: 4
+crop_border: ~
+gpu_ids: [0]
+
+datasets:
+  test_1:
+    name: Vaihingen
+    mode: SSSR
+    SS:
+      semseg_lst: ../datasets/kaggle_isprs/val_SS_3.lst
+    SR:
+      supres_lst: ../datasets/kaggle_isprs/val_SR_3.lst
+
+path:
+  pretrain_model_G: /home/ptitdemo/TVQH_TLU/Real-SR-master/Real-SR-master/codes/wandb/offline-run-20260823_150510-u8t5qeao/local_files/models/best_UNet.pth
+  results_root: ./results/
+
+network_G:
+  which_model_G: LDM
+  in_nc: 3
+  out_nc: 3
+  use_multitask: True
+  use_semantic_guidance: True

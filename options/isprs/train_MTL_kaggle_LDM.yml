@@ -1,0 +1,80 @@
+datasets:
+  train:
+    GT_size: 128
+    batch_size: 4
+    SR:
+      batch_size: 4
+      degrade:
+      - Bicubic
+      noise_data: Oracle
+      supres_lst: ../datasets/kaggle_isprs/train_SR.lst
+    SS:
+      batch_size: 4
+      semseg_lst: ../datasets/kaggle_isprs/train_SS.lst
+    aug: noise
+    color: RGB
+    data_type: img
+    mode: SSSR
+    n_workers: 4
+    name: ISPRS_train
+    phase: train
+    scale: 4
+    use_flip: true
+    use_rot: true
+    use_shuffle: true
+  val:
+    GT_size: 128
+    SR:
+      supres_lst: ../datasets/kaggle_isprs/val_SR.lst
+    SS:
+      semseg_lst: ../datasets/kaggle_isprs/val_SS.lst
+    batch_size: 4
+    color: RGB
+    data_type: img
+    mode: SSSR
+    n_workers: 4
+    name: ISPRS_val
+    phase: val
+    scale: 4
+    use_flip: false
+    use_rot: false
+    use_shuffle: false
+distortion: sr
+gpu_ids:
+- 0
+is_train: true
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 2500
+model: latent_diffusion
+name: LatentDiffusion_ISPRS_Kaggle
+network_G:
+  in_nc: 3
+  out_nc: 3
+  scale: 4
+  which_model_G: latent_diffusion
+num_classes: 7
+path:
+  resume_state: /home/ptitdemo/TVQH_TLU/Real-SR-master/Real-SR-master/codes/wandb/offline-run-20260820_071852-91pxuiq9/local_files/training_state/25000.state
+  strict_load: false
+scale: 4
+train:
+  beta1_G: 0.9
+  beta2_G: 0.999
+  lr_G: 0.0001
+  lr_gamma: 0.5
+  lr_scheme: MultiStepLR
+  lr_steps:
+  - 20000
+  - 40000
+  - 60000
+  manual_seed: 42
+  niter: 100000
+  val_freq: 5000
+  warmup_iter: -1
+  weight_decay_G: 0
+use_multitask: true
+use_semantic_guidance: true
+use_tb_logger: true
+freq_loss_weight: 0.1    # λ cho High-Frequency (FFT) Loss
+dino_model: dinov2_vits14 # DINOv2 backbone: vits14 (nhỏ), vitb14 (vừa)

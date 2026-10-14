@@ -1,0 +1,81 @@
+name: Ours_LDM_v4_ViTLarge_ISPRS
+use_tb_logger: true
+model: ldm_v2
+distortion: sr
+scale: 4
+gpu_ids: [0]
+use_semantic_guidance: true
+use_multitask: true
+use_dynamic_weight: true
+use_bidirectional_fusion: true
+num_classes: 7
+freq_loss_weight: 0.1          # FFT Loss weight
+dino_model: dinov2_vitl14      # DINOv3 backbone
+
+datasets:
+  train:
+    name: ISPRS_train
+    mode: SSSR
+    aug: noise
+    use_shuffle: true
+    n_workers: 4
+    SR:
+      batch_size: 2
+      supres_lst: ../datasets/kaggle_isprs/train_SR.lst
+      degrade: [Bicubic]
+      noise_data: Oracle
+    SS:
+      batch_size: 2
+      semseg_lst: ../datasets/kaggle_isprs/train_SS.lst
+    GT_size: 128
+    use_flip: true
+    use_rot: true
+    color: RGB
+    phase: train
+    scale: 4
+    data_type: img
+  val:
+    name: ISPRS_val
+    mode: SSSR
+    SR:
+      supres_lst: ../datasets/kaggle_isprs/val_SR.lst
+    SS:
+      semseg_lst: ../datasets/kaggle_isprs/val_SS.lst
+    use_shuffle: false
+    n_workers: 4
+    batch_size: 2
+    GT_size: 128
+    use_flip: false
+    use_rot: false
+    color: RGB
+    phase: val
+    scale: 4
+    data_type: img
+
+network_G:
+  which_model_G: latent_diffusion
+  in_nc: 3
+  out_nc: 3
+  scale: 4
+
+path:
+  strict_load: false
+  resume_state: ~
+
+# 2000 samples / batch 2 = 1000 iter/epoch → 120 epoch = 120000 iter
+train:
+  lr_G: !!float 1e-4
+  weight_decay_G: 0.01       # AdamW cần weight_decay > 0
+  beta1_G: 0.9
+  beta2_G: 0.999
+  lr_scheme: MultiStepLR
+  niter: 120000
+  warmup_iter: -1
+  lr_steps: [50000, 100000]
+  lr_gamma: 0.5
+  manual_seed: 42
+  val_freq: 5000
+
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 2500
