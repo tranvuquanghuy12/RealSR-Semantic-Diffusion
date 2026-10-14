@@ -132,6 +132,8 @@ def save_img(img, img_path, mode='BGR'):
 # metric
 ####################
 
+from utils.niqe import calculate_niqe
+
 
 def calculate_psnr(img1, img2):
     # img1 and img2 have range [0, 255]

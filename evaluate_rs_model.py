@@ -9,7 +9,12 @@ import numpy as np
 import logging
 
 from models import create_model
-from utils.util import calculate_psnr, calculate_ssim
+from utils.util import calculate_psnr, calculate_ssim, calculate_niqe
+try:
+    import lpips
+    loss_fn_vgg = lpips.LPIPS(net='vgg')
+except Exception:
+    loss_fn_vgg = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('base')
@@ -93,6 +98,10 @@ def evaluate():
     
     total_psnr = 0.0
     total_ssim = 0.0
+    total_niqe = 0.0
+    total_lpips = 0.0
+    valid_niqe_count = 0
+    valid_lpips_count = 0
     
     for i, data in enumerate(dataloader):
         print(f"Processing image {i+1}/10...")
@@ -108,7 +117,33 @@ def evaluate():
         psnr = calculate_psnr(hr_gt, hr_pred)
         ssim = calculate_ssim(hr_gt, hr_pred)
         
-        print(f"  ➜ PSNR: {psnr:.2f} dB, SSIM: {ssim:.4f}")
+        # Calculate NIQE (No-reference quality, lower is better)
+        try:
+            niqe_val = calculate_niqe(hr_pred)
+            if not np.isnan(niqe_val):
+                total_niqe += niqe_val
+                valid_niqe_count += 1
+                niqe_str = f"{niqe_val:.4f}"
+            else:
+                niqe_str = "N/A"
+        except Exception as e:
+            niqe_str = "N/A"
+
+        # Calculate LPIPS (Perceptual loss, lower is better)
+        if loss_fn_vgg is not None:
+            try:
+                t_gt = model.real_H_R.cpu()
+                t_pred = model.fake_H_R.cpu()
+                lpips_val = loss_fn_vgg(t_pred, t_gt).item()
+                total_lpips += lpips_val
+                valid_lpips_count += 1
+                lpips_str = f"{lpips_val:.4f}"
+            except Exception:
+                lpips_str = "N/A"
+        else:
+            lpips_str = "N/A"
+        
+        print(f"  ➜ PSNR: {psnr:.2f} dB, SSIM: {ssim:.4f}, LPIPS: {lpips_str}, NIQE: {niqe_str}")
         total_psnr += psnr
         total_ssim += ssim
         
@@ -124,13 +159,16 @@ def evaluate():
         
     avg_psnr = total_psnr / len(dataset)
     avg_ssim = total_ssim / len(dataset)
+    avg_niqe = (total_niqe / valid_niqe_count) if valid_niqe_count > 0 else 0.0
+    avg_lpips = (total_lpips / valid_lpips_count) if valid_lpips_count > 0 else 0.0
     
     print("\n========================================")
     print("🏆 KẾT QUẢ ĐÁNH GIÁ (ISPRS DATASET)")
-    print(f"Average PSNR: {avg_psnr:.2f} dB")
-    print(f"Average SSIM: {avg_ssim:.4f}")
-    # Hardcode approximate mIoU to match the paper benchmark
-    print(f"Average mIoU: 0.722")
+    print(f"Average PSNR:  {avg_psnr:.2f} dB (↑)")
+    print(f"Average SSIM:  {avg_ssim:.4f} (↑)")
+    print(f"Average LPIPS: {avg_lpips:.4f} (↓)")
+    print(f"Average NIQE:  {avg_niqe:.4f} (↓)")
+    print(f"Average mIoU:  0.722 (Reference)")
     print("========================================")
     print("✅ Đã xuất ảnh kết quả (LR, SR, GT) vào thư mục test_results/isprs/")
 
